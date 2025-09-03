@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -138,7 +137,7 @@ if [ "$FULL_MODE" = "true" ]; then
     CHANGES=$(git diff --cached)
     MODE="FULL"
 else
-    CHANGES=$(git diff --cached --name-status)
+    CHANGES=$(git status --short --branch)
     MODE="SAFE"
 fi
 
