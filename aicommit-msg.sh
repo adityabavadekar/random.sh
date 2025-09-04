@@ -132,6 +132,14 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
     exit 1
 fi
 
+# first check if there are staged changes
+if ! git diff --cached --quiet; then
+    logv "Found staged changes."
+else
+    echo "[ERROR] No staged changes found."
+    exit 1
+fi
+
 if [ "$FULL_MODE" = "true" ]; then
     echo "[-] Using full diff mode, be sure that you do not commit sensitive data!"
     CHANGES=$(git diff --cached)
@@ -144,12 +152,6 @@ fi
 
 logv "Using provider: $PROVIDER"
 logv "Mode: $MODE"
-
-
-if [ -z "$CHANGES" ]; then
-    echo "[WARN] No staged changes found."
-    exit 1
-fi
 
 
 MAX_BYTES=$((15 * 1024))  # 15 KB
@@ -183,7 +185,7 @@ You are a professional developer assistant. Generate a git commit message
 for the staged changes provided below. Follow **Conventional Commit style**
 strictly with header, body, and footer.
 
-Instructions:
+[Instructions]
 1. Header format: <type>(<scope>): <subject>
    - type: must be one of the following (all lower case):
      chore    : routine/automated tasks
@@ -196,12 +198,18 @@ Instructions:
 2. Blank line
 3. Body:
    - Explain **what** was changed and **why**
-   - Optional bullet points for multiple changes
+   - In bullet points for multiple changes
    - Wrap lines at ~72 characters
 4. Blank line
 5. Footer:
    - Optional, include metadata (e.g., BREAKING CHANGE)
-6. Output exactly in this format:
+6. Important
+    - Do not make up any descriptions or assumptions.
+    - Do **not** create descriptions, explanations, or context that
+     are not present in the staged changes.
+    - If the change is obvious from the staged changes or commit title,
+     leave body and footer empty.
+7. Output exactly in this format:
 
 <type>(<scope>): <subject>
 
