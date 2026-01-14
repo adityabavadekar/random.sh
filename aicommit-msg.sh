@@ -88,33 +88,29 @@ EOF
 # --- parse args ---
 for arg in "$@"; do
     case "$arg" in
-        --full) FULL_MODE="true" ;;
-        -v|--verbose) VERBOSE="true" ;;
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        --*) 
-            ;;  # ignore unknown flags
-        *)
-            if [ -z "$PROVIDER" ]; then
-                PROVIDER="$arg"
-            fi
-            ;;
+    --full) FULL_MODE="true" ;;
+    -v | --verbose) VERBOSE="true" ;;
+    -h | --help)
+        show_help
+        exit 0
+        ;;
+    --*) ;; # ignore unknown flags
+    *)
+        if [ -z "$PROVIDER" ]; then
+            PROVIDER="$arg"
+        fi
+        ;;
     esac
 done
 
-
 # verbose logging
 logv() {
-  if [ "$VERBOSE" = "true" ]; then
-    echo "[DEBUG] $*"
-  fi
+    if [ "$VERBOSE" = "true" ]; then
+        echo "[DEBUG] $*"
+    fi
 }
 
-
 logv "Verbose mode enabled"
-
 
 if [ -z "$PROVIDER" ] && [ -n "${AI_MODEL_PROVIDER:-}" ]; then
     logv "Using provider from AI_MODEL_PROVIDER env var"
@@ -126,8 +122,7 @@ if [ -z "$PROVIDER" ]; then
     PROVIDER="$DEFAULT_PROVIDER"
 fi
 
-
-if ! git rev-parse --git-dir > /dev/null 2>&1; then
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
     echo "[ERROR] Not inside a git repository."
     exit 1
 fi
@@ -149,21 +144,16 @@ else
     MODE="SAFE"
 fi
 
-
 logv "Using provider: $PROVIDER"
 logv "Mode: $MODE"
 
-
-MAX_BYTES=$((15 * 1024))  # 15 KB
+MAX_BYTES=$((50 * 1024)) # 50 KB
 CHANGE_SIZE=$(printf "%s" "$CHANGES" | wc -c)
-
 
 logv "Change size: $CHANGE_SIZE bytes"
 logv "-------------- Changes --------------"
 logv "$CHANGES"
 logv "-------------------------------------"
-
-
 
 if [ "$CHANGE_SIZE" -gt "$MAX_BYTES" ]; then
     echo "[WARN] Staged diff too large: ${CHANGE_SIZE} bytes"
@@ -179,8 +169,8 @@ if [ "$CHANGE_SIZE" -gt "$MAX_BYTES" ]; then
     fi
 fi
 
-
-PROMPT=$(cat <<EOF
+PROMPT=$(
+    cat <<EOF
 You are a professional developer assistant. Generate a git commit message
 for the staged changes provided below. Follow **Conventional Commit style**
 strictly with header, body, and footer.
@@ -196,10 +186,12 @@ strictly with header, body, and footer.
    - scope: optional, relevant module/area
    - subject: imperative, concise (≤50 chars)
 2. Blank line
-3. Body:
-   - Explain **what** was changed and **why**
-   - In bullet points for multiple changes
+3. Body (optional):
+   - Include ONLY if the header alone is insufficient
+   - Describe **what changed** and **why**
+   - Use bullet points for multiple changes
    - Wrap lines at ~72 characters
+   - Do NOT restate the subject
 4. Blank line
 5. Footer:
    - Optional, include metadata (e.g., BREAKING CHANGE)
@@ -218,15 +210,17 @@ strictly with header, body, and footer.
 <footer>
 
 Context (staged changes):
+[STAGED CHANGES  START]
+=====================================
 $CHANGES
+=====================================
+[STAGED CHANGES  START]
 EOF
 )
-
 
 logv "-------------- Prompt --------------"
 logv "$PROMPT"
 logv "------------------------------------"
-
 
 # --- Providers ---
 generate_openai() {
@@ -243,7 +237,7 @@ generate_openai() {
             {\"role\": \"system\", \"content\": \"You are a helpful assistant for writing commit messages.\"},
             {\"role\": \"user\", \"content\": \"$PROMPT\"}
           ]
-        }" | jq -r '.choices[0].message.content'
+        }" | jq -r '.choices[0].message.content // .'
 }
 
 generate_gemini() {
@@ -251,14 +245,17 @@ generate_gemini() {
         echo "[ERROR] GEMINI_API_KEY not set." >&2
         exit 1
     fi
-    curl -s -X POST \
-        -H "Content-Type: application/json" \
-        "https://generativelanguage.googleapis.com/v1beta/models/$GEMINI_MODEL:generateContent?key=$GEMINI_API_KEY" \
-        -d "{
-          \"contents\": [{
-            \"parts\": [{\"text\": \"$PROMPT\"}]
-          }]
-        }" | jq -r '.candidates[0].content.parts[0].text'
+
+    temp=$(
+        jq -n --arg prompt "$PROMPT" \
+            '{ contents: [ { parts: [ { text: $prompt } ] } ] }' |
+            curl -s -X POST \
+                -H "Content-Type: application/json" \
+                -d @- \
+                "https://generativelanguage.googleapis.com/v1beta/models/$GEMINI_MODEL:generateContent?key=$GEMINI_API_KEY"
+    )
+
+    echo "$temp" | jq -r '.candidates[0].content.parts[0].text // .'
 }
 
 generate_copilot() {
@@ -277,20 +274,19 @@ generate_ollama() {
     echo "$PROMPT" | ollama run "$OLLAMA_MODEL"
 }
 
-
 RESPONSE=""
 
 echo "--- using provider: $PROVIDER (mode: $MODE)"
 
 case "$PROVIDER" in
-    openai)   RESPONSE=$(generate_openai) ;;
-    gemini)   RESPONSE=$(generate_gemini) ;;
-    copilot)  RESPONSE=$(generate_copilot) ;;
-    ollama)   RESPONSE=$(generate_ollama) ;;
-    *)
-        echo "[ERROR] Unknown provider: $PROVIDER (use openai|gemini|copilot|ollama)"
-        exit 1
-        ;;
+openai) RESPONSE=$(generate_openai) ;;
+gemini) RESPONSE=$(generate_gemini) ;;
+copilot) RESPONSE=$(generate_copilot) ;;
+ollama) RESPONSE=$(generate_ollama) ;;
+*)
+    echo "[ERROR] Unknown provider: $PROVIDER (use openai|gemini|copilot|ollama)"
+    exit 1
+    ;;
 esac
 
 if [ -z "$RESPONSE" ]; then
