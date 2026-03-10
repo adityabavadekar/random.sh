@@ -10,15 +10,31 @@ KEY_NAME="id_ed25519"
 echo "[*] Checking existing SSH access..."
 ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"
 if [ $? -eq 0 ]; then
-	    echo "[*] SSH access already working. Exiting."
-	        exit 0
+  echo "[*] SSH access already working. Exiting."
+  exit 0
+fi
+
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+if [ -f ~/.ssh/$KEY_NAME ]; then
+  echo "[!] SSH key already exists at ~/.ssh/$KEY_NAME"
+  exit 1
 fi
 
 echo "[*] Generating SSH key..."
 ssh-keygen -t ed25519 -C "$EMAIL" -f ~/.ssh/$KEY_NAME -N ""
 
 echo "[*] Starting ssh-agent..."
-eval "$(ssh-agent -s)"
+if ! command -v ssh-agent >/dev/null 2>&1; then
+  echo "[!] ssh-agent not found. Install openssh:"
+  echo "    sudo pacman -S openssh"
+  exit 1
+fi
+
+if [ -z "$SSH_AUTH_SOCK" ]; then
+  eval "$(ssh-agent -s)"
+fi
 
 echo "[*] Adding SSH key to agent..."
 ssh-add ~/.ssh/$KEY_NAME
@@ -37,4 +53,3 @@ read -p "[*] Press Enter after you’ve added the key to Github to test the conn
 
 echo "[*] Testing SSH connection..."
 ssh -T git@github.com
-
