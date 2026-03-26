@@ -6,7 +6,7 @@ echo "Starting setup..."
 
 pkg update -y
 
-pkg install git wget curl python zsh neovim ripgrep clang make cmake -y
+pkg install git wget curl python zsh neovim ripgrep clang make cmake rsync -y
 
 # ssh setup
 echo "Setting up SSH..."
