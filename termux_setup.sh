@@ -1,4 +1,4 @@
-# direct setup for termux
+
 # run using:
 # sh -c "$(curl -fsSL http://192.168.1.x:3000/termux_setup.sh)"
 
@@ -27,6 +27,9 @@ git clone https://github.com/marlonrichert/zsh-autocomplete ${ZSH_CUSTOM:-~/.oh-
 
 echo "Installing auto-suggestions plugin..."
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+
+echo "Initializing custom state:"
+touch ~/.hushlogin
 
 echo "Open ~/.zshrc, find the line that sets ZSH_THEME, and change its value to 'powerlevel10k/powerlevel10k'"
 
