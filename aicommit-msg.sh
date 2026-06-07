@@ -171,50 +171,61 @@ fi
 
 PROMPT=$(
     cat <<EOF
-You are a professional developer assistant. Generate a git commit message
-for the staged changes provided below. Follow **Conventional Commit style**
-strictly with header, body, and footer.
+You are an expert developer assistant. Generate a git commit message for the staged changes below.
+Follow Conventional Commits style strictly.
 
-[Instructions]
-1. Header format: <type>(<scope>): <subject>
-   - type: must be one of the following (all lower case):
-     chore    : routine/automated tasks
-     deprecate: deprecating functionality
-     feat     : adding new functionality
-     fix      : bug fixes/errors
-     release  : release-related changes
-   - scope: optional, relevant module/area
-   - subject: imperative, concise (≤50 chars)
-2. Blank line
-3. Body (optional):
-   - Include ONLY if the header alone is insufficient
-   - Describe **what changed** and **why**
-   - Use bullet points for multiple changes
-   - Wrap lines at ~72 characters
-   - Do NOT restate the subject
-4. Blank line
-5. Footer:
-   - Optional, include metadata (e.g., BREAKING CHANGE)
-6. Important
-    - Do not make up any descriptions or assumptions.
-    - Do **not** create descriptions, explanations, or context that
-     are not present in the staged changes.
-    - If the change is obvious from the staged changes or commit title,
-     leave body and footer empty.
-7. Output exactly in this format:
+## Header — always required
 
-<type>(<scope>): <subject>
+Format: <type>(<scope>): <subject>
 
-<body>
+**type** (lowercase, pick one):
+  feat      — new feature or capability added
+  fix       — bug fix or error correction
+  chore     — maintenance, tooling, config, deps (no production logic change)
+  deprecate — marking something as deprecated
+  release   — version bump or release prep
 
-<footer>
+**scope** (optional):
+  A short lowercase noun describing the area affected (e.g. auth, api, parser).
+  Omit if the change is global or scope is not meaningful.
 
-Context (staged changes):
-[STAGED CHANGES  START]
+**subject**:
+  - Written in imperative mood: "add", "fix", "remove" — NOT "added", "fixes", "removing"
+  - Lowercase first letter, no period at the end
+  - ≤50 characters
+  - Describes the effect of the change, not the mechanism
+  - Good:  "add rate limiting to login endpoint"
+  - Bad:   "Added rate-limiting logic in auth/login.ts"  ← past tense, mentions file
+
+## Body — optional, usually omitted
+
+Include a body ONLY when the header cannot fully capture the intent or impact of the change.
+Most commits do NOT need a body. Skip it when the subject line is self-explanatory.
+
+When included:
+  - Explain *what* changed and *why*, never *how*
+  - Do NOT list file names, function names, or implementation details
+  - Do NOT restate the subject
+  - Use "- " bullet points for multiple distinct points
+  - Wrap lines at 72 characters
+
+## Footer — optional, rarely needed
+
+Use only for:
+  BREAKING CHANGE: <what breaks and why>
+  Refs: #<issue-number>
+
+## Critical rules
+  - Output ONLY the raw commit message — no markdown, no fences, no commentary
+  - Do NOT mention file names, paths, or variable names anywhere in the message
+  - Do NOT invent context, reasons, or details absent from the staged changes
+  - Prefer a single clean header with no body over a padded or speculative body
+  - If body and footer are empty, output only the header line
+
+## Staged changes ($MODE mode)
 =====================================
 $CHANGES
 =====================================
-[STAGED CHANGES  START]
 EOF
 )
 
