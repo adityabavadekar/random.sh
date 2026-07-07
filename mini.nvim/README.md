@@ -21,13 +21,13 @@ _(of course after installing neovim)_
 ### Arch Linux
 
 ```bash
-sudo pacman -S --needed git make rust go python unzip nodejs yarn npm ripgrep tree-sitter tree-sitter-cli base-devel nvim
+sudo pacman -S --needed curl git make rust go python unzip nodejs yarn npm ripgrep fzf tree-sitter tree-sitter-cli base-devel nvim
 ```
 
 ### Ubuntu
 
 ```bash
-sudo apt update && sudo apt install -y git make rustc cargo golang-go yarn python3 python3-pip unzip nodejs npm ripgrep tree-sitter-cli build-essential
+sudo apt update && sudo apt install -y curl git make rustc cargo golang-go yarn python3 python3-pip unzip nodejs npm ripgrep fzf tree-sitter-cli build-essential
 ```
 
 ## Verify Installation
